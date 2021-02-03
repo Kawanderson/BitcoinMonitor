@@ -8,6 +8,7 @@ __pycache__/
 
 #Configuration file
 *.ini
+Users.db
 
 # Distribution / packaging
 .Python
