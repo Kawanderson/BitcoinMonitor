@@ -7,3 +7,7 @@ Fiz esse pequeno projeto pois estou utilizando o telegram como rede social princ
 ## Dia 01 - 02/02/2021
 
 Dei inicio ao projeto e criei alguns arquivos para poder iniciar amanhã.
+
+## Dia 02 - 03/02/2021
+
+Fiz uma para armazenamento dos dados.
