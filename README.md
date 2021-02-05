@@ -11,3 +11,7 @@ Dei inicio ao projeto e criei alguns arquivos para poder iniciar amanhã.
 ## Dia 02 - 03/02/2021
 
 Fiz uma para armazenamento dos dados.
+
+## Dia 03 - 04/02/2021
+
+Hoje não foi muito produtivo, mas como estou fazendo esse desafio resolvi fazer isso para não ficar sem programar.
