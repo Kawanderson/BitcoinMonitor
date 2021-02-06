@@ -20,7 +20,6 @@ class User(Base):
     last_price = Column(Float, default=0)
     win_percent = Column(Integer, default=1)
     loss_percent = Column(Integer, default=10)
-    monitor_type = Column(Integer, default=1)
     start_date = Column(DateTime, default=datetime.now())
 
     def __init__(self, chat_id, username) -> None:

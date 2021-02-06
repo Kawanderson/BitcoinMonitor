@@ -15,3 +15,7 @@ Fiz uma para armazenamento dos dados.
 ## Dia 03 - 04/02/2021
 
 Hoje não foi muito produtivo, mas como estou fazendo esse desafio resolvi fazer isso para não ficar sem programar.
+
+## Dia 04 - 05/02/2021
+
+Hoje foi um otimo dia :D Acordei muito animado para continuar o projeto, adicionei as principais funções aos botões e agora so falta fazer a parte do monitoramento em si(Parte mais simples) provavelmente amanhã sera o ultimo dia de programação.

@@ -7,6 +7,7 @@ import amanobot.aio.helper
 from amanobot.aio.loop import MessageLoop
 from amanobot.aio.delegate import (
     per_chat_id, create_open, pave_event_space, include_callback_query_chat_id)
+from amanobot.delegate import chain
 from amanobot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from Database.database import User, Session
 from pprint import pprint
@@ -26,7 +27,6 @@ class Bitcoin(amanobot.aio.helper.ChatHandler):
         super(Bitcoin, self).__init__(*args, **kwargs)
         
         self.help_keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-                   InlineKeyboardButton(text='Commands 📚', callback_data='COM'),
                    InlineKeyboardButton(text='Configuration ⚙️', callback_data='CONF')],
                    [
                        InlineKeyboardButton(text='Informations ❓', callback_data='INFO'),
@@ -35,12 +35,26 @@ class Bitcoin(amanobot.aio.helper.ChatHandler):
         ])
 
         self.conf_keyboad = InlineKeyboardMarkup(inline_keyboard=[[
-                   InlineKeyboardButton(text="TimeMonitor +1", callback_data="TIME_ADD1"),
-                   InlineKeyboardButton(text="TimeMonitor -1", callback_data="TIME_SUB1")],
+                   InlineKeyboardButton(text="TimeMonitor ➕", callback_data="CONF_TIME_ADD"),
+                   InlineKeyboardButton(text="TimeMonitor ➖", callback_data="CONF_TIME_SUB")],
                    [
-                       InlineKeyboardButton(text="Switch MonitorType", callback_data="SWMNT")
+                   InlineKeyboardButton(text="LossPercent ➕", callback_data="CONF_LOSS_ADD"),
+                   InlineKeyboardButton(text="LossPercent ➖", callback_data="CONF_LOSS_SUB")],
+                   [
+                   InlineKeyboardButton(text="WinPercent ➕", callback_data="CONF_WIN_ADD"),
+                   InlineKeyboardButton(text="WinPercent ➖", callback_data="CONF_WIN_SUB")],
+                   [
+                       InlineKeyboardButton(text="Back ⬅️", callback_data="RETURN_HOME")
                    ]
         ])
+
+        self.return_keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+                   InlineKeyboardButton(text='Back ⬅️', callback_data='RETURN_HOME')]
+        ])
+    
+    async def on__idle(self, event):
+        await self.editor.editMessageText('To save processing I will close this section')
+        self.close()
     
     async def recived_message(self, msg):
         content_type, chat_type, chat_id = amanobot.glance(msg)
@@ -51,7 +65,7 @@ class Bitcoin(amanobot.aio.helper.ChatHandler):
             return
         
         if not "username" in msg['from'].keys():
-            await self.sender.sendMessage("To start using my services you need define a username in configurations of telegram.")
+            await self.sender.editMessageText("To start using this bot you need set a username in configurations of the telegram")
             return
         
         if msg['text'] == '/start' or msg['text'] == '/help':
@@ -61,21 +75,76 @@ class Bitcoin(amanobot.aio.helper.ChatHandler):
                 session.commit()
                 await self.sender.sendMessage("Welcome "+msg['from']['username'], reply_markup=self.help_keyboard)
             else:
-                await self.sender.sendMessage('Ajuda:', reply_markup=self.help_keyboard)
+                await self.sender.sendMessage('Help:', reply_markup=self.help_keyboard)
     
     async def on_callback_query(self, msg):
         query_id, from_id, query_data = amanobot.glance(msg, flavor='callback_query')
-        editor = amanobot.aio.helper.Editor(self.bot, (from_id, msg['message']["message_id"]))
+        self.editor = amanobot.helper.Editor(self.bot, (from_id, msg['message']["message_id"]))
 
         pprint(msg)
 
         if query_data == "INFO":
             USUARIOS = len(session.query(User).all())
-            await editor.editMessageText(f"<b>Creator:</b> <code>@SouSeuDono</code>\n<b>Version:</b> <code>{VERSION}</code>\n<b>Users:</b> <code>{USUARIOS}</code>", parse_mode="html")
+            await self.editor.editMessageText(f"<b>Creator:</b> <code>@SouSeuDono</code>\n<b>Version:</b> <code>{VERSION}</code>\n<b>Users:</b> <code>{USUARIOS}</code>", parse_mode="html", reply_markup=self.return_keyboard)
         
-        if query_data == "CONF":
-            await editor.editMessageText("Configuration:", reply_markup=self.conf_keyboad)
+        if query_data.startswith("CONF"):
+            TIME_TO_MONITOR = session.query(User).filter_by(chat_id=from_id).one_or_none().time_monitor
+            WIN_PERCENT = session.query(User).filter_by(chat_id=from_id).one_or_none().win_percent
+            LOSS_PERCENT = session.query(User).filter_by(chat_id=from_id).one_or_none().loss_percent
 
+            if query_data == "CONF":
+                await self.editor.editMessageText(f"<b>Time to Monitor:</b> <code>{TIME_TO_MONITOR} Minutes</code>\n<b>Price up percent:</b> <code>{WIN_PERCENT}%</code>\n<b>Price loss percent:</b> <code>{LOSS_PERCENT}%</code>", reply_markup=self.conf_keyboad, parse_mode="html")
+            
+            elif "_".join(query_data.split("_")[1::]) == "TIME_SUB":
+                if TIME_TO_MONITOR > 15:
+
+                    session.query(User).filter_by(chat_id=from_id).update({"time_monitor": TIME_TO_MONITOR-1})
+                    session.commit()
+                    TIME_TO_MONITOR = session.query(User).filter_by(chat_id=from_id).one_or_none().time_monitor
+                    await self.editor.editMessageText(f"<b>Time to Monitor:</b> <code>{TIME_TO_MONITOR} Minutes</code>\n<b>Price up percent:</b> <code>{WIN_PERCENT}%</code>\n<b>Price loss percent:</b> <code>{LOSS_PERCENT}%</code>", reply_markup=self.conf_keyboad, parse_mode="html")
+                else:
+                    await self.bot.answerCallbackQuery(query_id, text='This is the minimum time!')
+
+            elif "_".join(query_data.split("_")[1::]) == "TIME_ADD":
+                session.query(User).filter_by(chat_id=from_id).update({"time_monitor": TIME_TO_MONITOR+1})
+                session.commit()
+                TIME_TO_MONITOR = session.query(User).filter_by(chat_id=from_id).one_or_none().time_monitor
+                await self.editor.editMessageText(f"<b>Time to Monitor:</b> <code>{TIME_TO_MONITOR} Minutes</code>\n<b>Price up percent:</b> <code>{WIN_PERCENT}%</code>\n<b>Price loss percent:</b> <code>{LOSS_PERCENT}%</code>", reply_markup=self.conf_keyboad, parse_mode="html")
+            
+            elif "_".join(query_data.split("_")[1::]) == "LOSS_ADD":
+                session.query(User).filter_by(chat_id=from_id).update({"loss_percent": LOSS_PERCENT+1})
+                session.commit()
+                LOSS_PERCENT = session.query(User).filter_by(chat_id=from_id).one_or_none().loss_percent
+                await self.editor.editMessageText(f"<b>Time to Monitor:</b> <code>{TIME_TO_MONITOR} Minutes</code>\n<b>Price up percent:</b> <code>{WIN_PERCENT}%</code>\n<b>Price loss percent:</b> <code>{LOSS_PERCENT}%</code>", reply_markup=self.conf_keyboad, parse_mode="html")
+            
+            elif "_".join(query_data.split("_")[1::]) == "LOSS_SUB":
+                if LOSS_PERCENT > 1:
+                    session.query(User).filter_by(chat_id=from_id).update({"loss_percent": LOSS_PERCENT-1})
+                    session.commit()
+                    LOSS_PERCENT = session.query(User).filter_by(chat_id=from_id).one_or_none().loss_percent
+                    await self.editor.editMessageText(f"<b>Time to Monitor:</b> <code>{TIME_TO_MONITOR} Minutes</code>\n<b>Price up percent:</b> <code>{WIN_PERCENT}%</code>\n<b>Price loss percent:</b> <code>{LOSS_PERCENT}%</code>", reply_markup=self.conf_keyboad, parse_mode="html")
+                else:
+                    await self.bot.answerCallbackQuery(query_id, text='This is the minimum loss!')
+            
+            elif "_".join(query_data.split("_")[1::]) == "WIN_ADD":
+                session.query(User).filter_by(chat_id=from_id).update({"win_percent": WIN_PERCENT+1})
+                session.commit()
+                WIN_PERCENT = session.query(User).filter_by(chat_id=from_id).one_or_none().win_percent
+                await self.editor.editMessageText(f"<b>Time to Monitor:</b> <code>{TIME_TO_MONITOR} Minutes</code>\n<b>Price up percent:</b> <code>{WIN_PERCENT}%</code>\n<b>Price loss percent:</b> <code>{LOSS_PERCENT}%</code>", reply_markup=self.conf_keyboad, parse_mode="html")
+            
+            elif "_".join(query_data.split("_")[1::]) == "WIN_SUB":
+                if WIN_PERCENT > 1:
+                    session.query(User).filter_by(chat_id=from_id).update({"win_percent": WIN_PERCENT-1})
+                    session.commit()
+                    WIN_PERCENT = session.query(User).filter_by(chat_id=from_id).one_or_none().win_percent
+                    await self.editor.editMessageText(f"<b>Time to Monitor:</b> <code>{TIME_TO_MONITOR} Minutes</code>\n<b>Price up percent:</b> <code>{WIN_PERCENT}%</code>\n<b>Price loss percent:</b> <code>{LOSS_PERCENT}%</code>", reply_markup=self.conf_keyboad, parse_mode="html")
+                else:
+                    await self.bot.answerCallbackQuery(query_id, text='This is the minimum win!')
+        
+        if "RETURN" in query_data:
+            if query_data.split("_")[1] == "HOME":
+                await self.editor.editMessageText("Help", reply_markup=self.help_keyboard)
+        
     async def on_chat_message(self, msg):
         await self.recived_message(msg)      
 
@@ -87,6 +156,7 @@ bot = amanobot.aio.DelegatorBot(TOKEN, [
 
 loop = asyncio.get_event_loop()
 loop.create_task(MessageLoop(bot).run_forever())
+
 print('Listening ...')
 
 loop.run_forever()
