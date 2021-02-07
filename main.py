@@ -18,6 +18,10 @@ config.read('config.ini')
 #####---STATIC VARS---#####
 TOKEN = config["BOT"].get("Token")
 VERSION = config["BOT"].get("Version")
+CREATOR = config["BOT"].get("Creator")
+BTC_ADDR = config["WALLETS"].get("BTC")
+ETH_ADDR = config["WALLETS"].get("ETH")
+BTC_CASH_ADDR = config["WALLETS"].get("BTC_CASH")
 session = Session()
 #####---END---#####
 
@@ -87,7 +91,7 @@ class Bitcoin(amanobot.aio.helper.ChatHandler):
             USUARIOS = len(session.query(User).all())
             await self.editor.editMessageText(f"<b>Creator:</b> <code>@SouSeuDono</code>\n<b>Version:</b> <code>{VERSION}</code>\n<b>Users:</b> <code>{USUARIOS}</code>", parse_mode="html", reply_markup=self.return_keyboard)
         
-        if query_data.startswith("CONF"):
+        elif query_data.startswith("CONF"):
             TIME_TO_MONITOR = session.query(User).filter_by(chat_id=from_id).one_or_none().time_monitor
             WIN_PERCENT = session.query(User).filter_by(chat_id=from_id).one_or_none().win_percent
             LOSS_PERCENT = session.query(User).filter_by(chat_id=from_id).one_or_none().loss_percent
@@ -141,9 +145,12 @@ class Bitcoin(amanobot.aio.helper.ChatHandler):
                 else:
                     await self.bot.answerCallbackQuery(query_id, text='This is the minimum win!')
         
-        if "RETURN" in query_data:
+        elif "RETURN" in query_data:
             if query_data.split("_")[1] == "HOME":
                 await self.editor.editMessageText("Help", reply_markup=self.help_keyboard)
+        
+        elif "DONATE" == query_data:
+            await self.editor.editMessageText(f"🎁 <b>Wallets</b> 🎁\n\n<b>Bitcoin:</b> <code>{BTC_ADDR}</code>\n<b>Etherium:</b> <code>{ETH_ADDR}</code>\n<b>Bitcoin Cash:</b> <code>{BTC_CASH_ADDR}</code>\n\n<b>Note</b>\n<code>If you need other types of address please tell in my telegram: {CREATOR}</code>", parse_mode="html", reply_markup=self.return_keyboard)
         
     async def on_chat_message(self, msg):
         await self.recived_message(msg)      
@@ -151,7 +158,7 @@ class Bitcoin(amanobot.aio.helper.ChatHandler):
 bot = amanobot.aio.DelegatorBot(TOKEN, [
     include_callback_query_chat_id(
         pave_event_space())(
-            per_chat_id(types=['private']), create_open, Bitcoin, timeout=10),
+            per_chat_id(types=['private']), create_open, Bitcoin, timeout=30),
 ])
 
 loop = asyncio.get_event_loop()

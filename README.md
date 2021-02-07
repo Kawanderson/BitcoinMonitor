@@ -19,3 +19,7 @@ Hoje não foi muito produtivo, mas como estou fazendo esse desafio resolvi fazer
 ## Dia 04 - 05/02/2021
 
 Hoje foi um otimo dia :D Acordei muito animado para continuar o projeto, adicionei as principais funções aos botões e agora so falta fazer a parte do monitoramento em si(Parte mais simples) provavelmente amanhã sera o ultimo dia de programação.
+
+## Dia 05 - 06/02/2021
+
+Fui perceber que hoje era sabado '-' não fiz muita coisa apenas adicionei uma área para poder receber doções.
